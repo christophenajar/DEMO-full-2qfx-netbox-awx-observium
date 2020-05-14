@@ -1,0 +1,37 @@
+- name: Git clone awx repository from github
+  git:
+    repo: https://github.com/ansible/awx.git
+    dest: /home/vagrant/awx
+  tags:
+    - awx 
+
+- name: Replace some varibles in awx inventory file (1/2)
+  lineinfile:
+    path: /home/vagrant/awx/installer/inventory
+    regexp: '^postgres_data_dir'
+    line: postgres_data_dir="/opt/pgdocker"
+  tags:
+   - awx-config
+
+- name: Replace some varibles in awx inventory file (2/2)
+  lineinfile:
+    path: /home/vagrant/awx/installer/inventory
+    regexp: '^docker_compose_dir'
+    line: docker_compose_dir="/opt/awxcompose"
+  tags:
+   - awx-config
+
+- name: Creating /opt/pgdocker and /opt/awxcompose directory
+  shell: |
+   mkdir -p /opt/pgdocker /opt/awxcompose
+   chown vagrant /opt/pgdocker/ /opt/awxcompose/
+  tags:
+   - awx-config
+
+- name: Finalize AWX configuration
+  shell: |
+   cd /home/vagrant/awx/installer
+   ansible-playbook -i inventory install.yml
+  tags:
+   - awx-config-install 
+

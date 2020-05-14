@@ -1,0 +1,88 @@
+# This task list many ways to get status from your devices
+- name: Get some status
+  hosts: vqfx10k
+  connection: local
+  gather_facts: no
+
+  vars:
+   tmp_dir: "/tmp"
+   lldp_file: "{{ tmp_dir}}/{{ inventory_hostname }}-lldp.txt"
+   bgp_file: "{{ tmp_dir}}/{{ inventory_hostname }}-bgp.txt"
+
+
+  roles:
+    - Juniper.junos
+
+
+  tasks:
+
+#-
+   - name: Retrieve information from devices running Junos
+     juniper_junos_facts:
+        config_format: "json"
+     register: result
+
+   - name: Print configuration
+     debug:
+        var: result.ansible_facts.junos.config
+
+
+#-
+#   - name: get uptime using ansible core module
+#     juniper_junos_rpc:
+#        rpc: get-system
+#        output: text
+#     register: uptime
+#
+#   - name: display uptimes
+#     debug: var=uptime
+
+
+
+#-
+   - name: confirm or create configs directory
+     file:
+       path: "{{ tmp_dir }}"
+       state: directory
+
+   - name: get lldp neighbor table
+     juniper_junos_rpc:
+        rpc: get-lldp-neighbors-information
+        format: text
+        #format: json 
+        #format: xml 
+        host: "{{ ansible_host }}"
+        dest: "{{ lldp_file }}"
+
+
+#- 
+   - name: get bgp neighbor table
+     juniper_junos_command:
+       commands:
+         - "show bgp summary"
+       format: xml
+       host: "{{ ansible_host }}"
+       dest: "{{ bgp_file }}"
+     tags:
+       - bgp
+
+
+   - name: Print the BGP command output
+     debug:
+       var: response.stdout
+
+#- 
+   - name: Execute three commands.
+     juniper_junos_command:
+       commands:
+         - "show version"
+         - "show system uptime"
+         - "show interface terse"
+     register: response
+
+   - name: Print the command output of each.
+     debug:
+       var: item.stdout
+     with_items: "{{ response.results }}"
+
+

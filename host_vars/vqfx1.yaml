@@ -1,0 +1,29 @@
+
+interfaces:
+    - name: xe-0/0/0
+      ip: 10.10.66.1
+    - name: xe-0/0/1
+      ip: 10.10.0.1
+    - name: xe-0/0/2
+      ip: 10.10.1.1
+    - name: em5
+      ip: 10.10.5.1
+
+host:
+    loopback:
+        ip: 1.1.1.1
+
+underlay:
+    local:
+        asn: 60001
+    neighbors:
+      - interface: xe-0/0/1
+        name: vqfx2 xe-0/0/1
+        asn: 60002
+        peer_ip: 10.10.0.2
+        local_ip: 10.10.0.1
+      - interface: xe-0/0/2
+        name: vqfx2 xe-0/0/2
+        asn: 60002
+        peer_ip: 10.10.1.2
+        local_ip: 10.10.1.1

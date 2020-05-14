@@ -1,0 +1,29 @@
+- name: Add an apt key by id from a keyserver
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 93C4A3FD7BB9C367
+  tags:
+    - ansible
+
+- name: Update apt source list for ansible 
+  apt_repository:
+    repo: deb http://ppa.launchpad.net/ansible/ansible/ubuntu bionic main
+    state: present
+    filename: ansible
+    update_cache: yes
+  tags:
+    - ansible
+
+- name : Install ansible latest package
+  apt: 
+    pkg:
+    - ansible
+  register: output
+  tags:
+    - ansible
+
+#- name: Print the complete response.
+#  debug:
+#    var: output
+#  tags:
+#    - ansible

@@ -1,0 +1,27 @@
+- name: Install docker latest package
+  apt:
+    pkg:
+    - docker.io
+    - docker-compose
+  register: output
+  tags:
+    - docker
+
+- name: Upgrade pip3 to latest vesion
+#  pip:
+#    name: pip3
+#    extra_args: --upgrade
+  shell: |
+    pip3 install --upgrade pip
+  register: output
+  tags:
+    - docker
+
+- name: Pip install docker-compose
+  pip:
+    name: 
+      - docker-compose==1.24.1
+      - pipenv
+  register: output
+  tags:
+    - docker

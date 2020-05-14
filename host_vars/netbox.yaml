@@ -1,0 +1,5 @@
+netbox_postgresql_user: netbox
+netbox_postgresql_password: netbox55 
+netbox_admin_user: admin
+netbox_admin_email: admin@youremail.com
+nettbox_admin_password: admin55

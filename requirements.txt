@@ -1,0 +1,5 @@
+ansible>=2.9.5
+junos-eznc>=2.3.1
+jxmlease>=1.0.1
+Jinja2>=2.11%
+pynetbox>=4.2.2

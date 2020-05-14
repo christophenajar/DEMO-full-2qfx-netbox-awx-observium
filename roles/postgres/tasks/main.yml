@@ -1,0 +1,51 @@
+- name : Install postgresql
+  apt:
+    pkg:
+    - postgresql
+    - libpq-dev
+  register: output
+  tags:
+    - postgresql
+
+- name: Pip install psycopg2
+  pip:
+    name:
+      - psycopg2
+  register: output
+  tags:
+    - postgresql
+
+- name: Create Database
+  become: true
+  become_user: postgres
+  postgresql_db:
+    name: netbox
+  register: output
+  tags:
+    - postgresql
+
+- name: Create user 
+  become: true
+  become_user: postgres
+  postgresql_user:
+    name: netbox
+    password: netbox55
+    expires: infinity
+  register: output
+  tags:
+    - postgresql
+
+- name: Grant Privileges
+  become: true
+  become_user: postgres
+  postgresql_privs:
+    db: postgres
+    privs: ALL
+    type: database
+    obj: netbox
+    roles: netbox
+  register: output
+  tags:
+    - postgresql
+
+

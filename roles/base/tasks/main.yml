@@ -1,0 +1,25 @@
+- name: Install base packages
+  apt:
+    pkg:
+    - git
+    - python3
+    - python3-pip
+    - python3-dev
+    - build-essential
+    - lldpd
+    - ntp
+    - iperf3
+  register: output
+  tags:
+    - base
+
+- name: Change the python default version to python3
+  shell: |
+   update-alternatives --install /usr/bin/python python /usr/bin/python3.6 1
+  tags:
+    - base
+
+
+#- name: Print the complete response.
+#  debug:
+#    var: output

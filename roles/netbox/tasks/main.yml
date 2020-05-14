@@ -1,0 +1,157 @@
+- name: Install some packages (libxml2-dev...)
+  apt:
+    pkg:
+    - libxml2-dev
+    - libxslt1-dev
+    - libffi-dev 
+    - libpq-dev 
+    - libssl-dev 
+    - redis-server 
+    - zlib1g-dev
+  register: output
+  tags:
+    - netbox
+
+# Consider using the file module with state=directory rather than running 'mkdir'
+- name: Creating /opt/netbox/
+  shell: |
+   mkdir -p /opt/netbox/
+  register: output
+  tags:
+    - netbox
+
+- name: Git clone https://github.com/netbox-community/netbox.git
+  git:
+    repo: https://github.com/netbox-community/netbox.git
+    dest: /opt/netbox 
+  register: output
+  tags:
+    - netbox
+
+- name: Upgrade pip3 to latest vesion
+  shell: |
+    pip3 install --upgrade pip
+  register: output
+  tags:
+    - netbox
+
+- name: Creating /var/www/.local and /var/www/.cache
+  shell: |
+   mkdir -p /var/www/.local /var/www/.cache
+   chown www-data.www-data /var/www/.local /var/www/.cache
+  register: output
+  tags:
+    - netbox
+
+- name: Pip install /opt/netbox/requirements.txt
+  become: true
+  become_user: www-data
+  pip:
+    requirements: /opt/netbox/requirements.txt
+  register: output
+  tags:
+    - netbox
+
+- name: Copy configuration.example.py to configuration.py
+  #become: true
+  #become_user: root
+  copy:
+    src: /opt/netbox/netbox/netbox/configuration.example.py
+    dest: /opt/netbox/netbox/netbox/configuration.py
+    remote_src: yes
+  register: output
+  tags:
+    - netbox
+
+- name: Generate netbox secret key
+  become: true
+  become_user: www-data
+  command: 'python3 /opt/netbox/netbox/generate_secret_key.py'
+  register: secretkey
+  tags:
+    - netbox
+
+- name: Replace some variables in configuration.py (1/4)
+  lineinfile:
+    path: /opt/netbox/netbox/netbox/configuration.py
+    regexp: '^ALLOWED_HOSTS = \[\]'
+    line: 'ALLOWED_HOSTS = ["*"]'
+  register: output
+  tags:
+    - netbox
+
+- name: Replace some variables in configuration.py (2/4)
+  lineinfile:
+    path: /opt/netbox/netbox/netbox/configuration.py
+    regexp: "    'USER': '',               # PostgreSQL username"
+    line: "    'USER': 'netbox',         # Database name"
+  register: output
+  tags:
+    - netbox
+
+- name: Replace some variables in configuration.py (3/4)
+  lineinfile:
+    path: /opt/netbox/netbox/netbox/configuration.py
+    regexp: "    'PASSWORD': '',           # PostgreSQL password"
+    line: "    'PASSWORD': 'netbox55',           # PostgreSQL password"
+  register: output
+  tags:
+    - netbox
+
+- name: Replace some variables in configuration.py (4/4)
+  vars:
+   netbox_secretkey: "{{ secretkey.stdout }}"
+  lineinfile:
+    path: /opt/netbox/netbox/netbox/configuration.py
+    regexp: "^SECRET_KEY = ''"
+    line: "SECRET_KEY = '{{ netbox_secretkey }}'"
+  register: output
+  tags:
+    - netbox
+
+- name: Pip install pexpect
+  pip:
+    name:
+      - pexpect
+  register: output
+  tags:
+    - netbox
+
+- name: python3 manage.py migrate
+  become: true
+  become_user: www-data
+  command: 'python3 /opt/netbox/netbox/manage.py migrate'
+  register: output
+  tags:
+    - netbox
+
+- name: python3 manage.py createsuperuser
+  become: true
+  become_user: www-data
+  expect:
+    echo: yes
+    command: python3 /opt/netbox/netbox/manage.py createsuperuser --username "{{ netbox_admin_user }}"
+    responses: 
+     #(.*)Username (leave blank to use \'www-data\'): "{{ netbox_admin_user }}"
+     (.*)Email address: "{{ netbox_admin_email }}"
+     (.*)Password: "{{ nettbox_admin_password }}"
+  register: expect_example_result
+  failed_when: "expect_example_result.rc != 0 and 'Success' not in expect_example_result.stdout"
+  tags:
+    - netbox
+
+- name: Create /opt/netbox/netbox/static for user www-data
+  shell: |
+   mkdir -p /opt/netbox/netbox/static
+   chown www-data.www-data /opt/netbox/netbox/static
+  register: output
+  tags:
+    - netbox
+
+- name: python3 manage.py collectstatic --no-input
+  become: true
+  become_user: www-data
+  command: 'python3 /opt/netbox/netbox/manage.py collectstatic --no-input'
+  register: output
+  tags:
+    - netbox

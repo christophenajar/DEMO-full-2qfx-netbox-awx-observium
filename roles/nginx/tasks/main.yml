@@ -1,0 +1,49 @@
+- name: Install nginx package
+  apt:
+    pkg:
+    - nginx
+  register: output
+  tags:
+    - nginx
+
+- name: Touch /etc/nginx/sites-available/netbox
+  file:
+    path: /etc/nginx/sites-available/netbox
+    state: touch
+    mode: '0644'
+  register: output
+  tags:
+    - nginx
+
+- name: Editing /etc/nginx/sites-available/netbox
+  blockinfile: 
+    path: /etc/nginx/sites-available/netbox 
+    block: |
+      server {
+        listen 80;
+        server_name netbox.juniper.net;
+        client_max_body_size 25m;
+        location /static/ {
+           alias /opt/netbox/netbox/static/;
+        }
+        location / {
+          proxy_pass http://127.0.0.1:8001;
+          proxy_set_header X-Forwarded-Host $http_host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+      }
+  register: output
+  tags:
+    - nginx
+
+
+- name: Setup and restarting nginx
+  shell: |
+   rm /etc/nginx/sites-enabled/default
+   ln -s /etc/nginx/sites-available/netbox /etc/nginx/sites-enabled/netbox
+   service nginx restart
+  register: output
+  tags:
+    - nginx
+- debug: var=output.stdout_lines

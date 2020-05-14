@@ -1,0 +1,96 @@
+- name: Pip install gunicorn
+  become: true
+  become_user: www-data
+  pip:
+    name:
+      - gunicorn
+  register: output
+  tags:
+    - gunicorn
+
+- name: Copy file gunicorn.py
+  copy:
+    src: /opt/netbox/contrib/gunicorn.py
+    dest: /opt/netbox/gunicorn.py
+    remote_src: yes
+  register: output
+  tags:
+    - gunicorn
+
+- name: Copy service files to /etc/systemd/system/
+  shell: |
+    cp /opt/netbox/contrib/*.service /etc/systemd/system/
+  register: output
+  tags:
+    - gunicorn
+
+- name: Editing /etc/systemd/system/netbox-rq.service
+  lineinfile: 
+    path: /etc/systemd/system/netbox-rq.service
+    regexp: '^ExecStart'
+    # replace ExecStart=/opt/netbox/venv/bin/python3 /opt/netbox/netbox/manage.py rqworker
+    line: 'ExecStart=/usr/bin/python3 /opt/netbox/netbox/manage.py rqworker'
+  register: output
+  tags:
+    - gunicorn
+
+- name: Editing /etc/systemd/system/netbox-rq.service (2)
+  lineinfile:
+    path: /etc/systemd/system/netbox-rq.service
+    regexp: '^User=netbox'
+    line: 'User=www-data'
+  register: output
+  tags:
+    - gunicorn
+
+- name: Editing /etc/systemd/system/netbox-rq.service (3)
+  lineinfile:
+    path: /etc/systemd/system/netbox-rq.service
+    regexp: '^Group=netbox'
+    line: 'Group=www-data'
+  register: output
+  tags:
+    - gunicorn
+
+- name: Editing /etc/systemd/system/netbox.service
+  lineinfile:
+    path: /etc/systemd/system/netbox.service
+    regexp: '^ExecStart'
+    line: 'ExecStart=/var/www/.local/bin/gunicorn --pid /var/tmp/netbox.pid --pythonpath /opt/netbox/netbox --config /opt/netbox/gunicorn.py netbox.wsgi'
+  register: output
+  tags:
+    - gunicorn
+
+- name: Editing /etc/systemd/system/netbox.service (2)
+  lineinfile:
+    path: /etc/systemd/system/netbox.service
+    regexp: '^User=netbox'
+    line: 'User=www-data'
+  register: output
+  tags:
+    - gunicorn
+
+- name: Editing /etc/systemd/system/netbox.service (3)
+  lineinfile:
+    path: /etc/systemd/system/netbox.service
+    regexp: '^Group=netbox'
+    line: 'Group=www-data'
+  register: output
+  tags:
+    - gunicorn
+
+- name: Setup and restart netbox services
+  shell: |
+   systemctl daemon-reload
+   systemctl start netbox.service
+   systemctl start netbox-rq.service
+   systemctl enable netbox.service
+   systemctl enable netbox-rq.service
+   systemctl status netbox
+  register: output
+  tags:
+    - gunicorn
+
+- debug: var=output.stdout_lines
+  tags:
+    - gunicorn

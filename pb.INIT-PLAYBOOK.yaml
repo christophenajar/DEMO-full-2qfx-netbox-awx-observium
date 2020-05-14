@@ -1,0 +1,63 @@
+# This task gets all Junos configuration from all devices
+- name: Build and deploy configuration for VQFX10K
+  hosts: vqfx10k
+  connection: local
+  gather_facts: no
+  roles:
+    - Juniper.junos
+  tasks:
+#    - name: Update inventory file
+#      blockinfile:
+#        path: .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory
+#        block: |
+#          [all:vars]
+#          ansible_python_interpreter=`pipenv --py`
+    - name: Get pipenv --py var
+      command: 'pipenv --py'
+      register: pipenvpy
+
+    - name: Build configuration
+      template: src=vqfx.conf.j2 dest=/tmp/{{ inventory_hostname }}.conf
+
+    - name: Deploy config to device ... please wait
+      vars:
+       ansible_python_interpreter: "{{ pipenvpy.stdout }}" 
+      juniper_junos_config:
+        load: 'override'
+        src: "/tmp/{{ inventory_hostname }}.conf"
+        host: "{{ ansible_ssh_host }}"
+        port: "{{ ansible_ssh_port|string }}"
+        user: root
+        passwd: Juniper
+        format: text
+        logfile: /tmp/changes.log
+
+
+- name: Build and deploy base package for AWX Ubuntu Server
+  hosts: awx
+  become: yes
+  gather_facts: False
+
+  roles:
+    - base
+    - ansible
+    - docker
+    - npm
+    - awx
+
+- name: Build and deploy base package for NETBOX Ubuntu Server
+  hosts: netbox
+  become: yes
+  gather_facts: False
+
+  roles:
+    - base
+    - postgres
+    - netbox
+    - nginx
+    - gunicorn
+  
+#  tasks:
+#    - name: Get pipenv --py var
+#      command: 'pipenv --py'
+#      register: pipenvpy
