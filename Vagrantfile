@@ -126,7 +126,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         ansible.compatibility_mode = "2.0"
         ansible.config_file = "ansible.cfg"
         ansible.groups = {
-            "srv" => ["awx", "netbox" ],
+            "srv" => ["observium", "awx", "netbox" ],
             "vqfx10k" => ["vqfx1", "vqfx2" ],
             "vqfx10kpfe"  => ["vqfx1-pfe", "vqfx2-pfe"],
             "all:children" => ["srv", "vqfx10k", "vqfx10kpfe"]

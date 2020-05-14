@@ -17,20 +17,29 @@
       register: pipenvpy
 
     - name: Build configuration
-      template: src=vqfx.conf.j2 dest=/tmp/{{ inventory_hostname }}.conf
+      template: src=vqfx.conf.j2 dest=~/tmp/{{ inventory_hostname }}_2qfx-netbox-awx-observium.conf
 
     - name: Deploy config to device ... please wait
       vars:
        ansible_python_interpreter: "{{ pipenvpy.stdout }}" 
       juniper_junos_config:
         load: 'override'
-        src: "/tmp/{{ inventory_hostname }}.conf"
+        src: "~/tmp/{{ inventory_hostname }}_2qfx-netbox-awx-observium.conf"
         host: "{{ ansible_ssh_host }}"
         port: "{{ ansible_ssh_port|string }}"
         user: root
         passwd: Juniper
         format: text
-        logfile: /tmp/changes.log
+        logfile: ~/tmp/changes_vqfx10k_2qfx-netbox-awx-observium.log
+
+- name: Build and deploy base package for Observium Ubuntu Server
+  hosts: observium
+  become: yes
+  gather_facts: False
+
+  roles:
+    - base
+    - observium
 
 
 - name: Build and deploy base package for AWX Ubuntu Server
@@ -44,6 +53,7 @@
     - docker
     - npm
     - awx
+
 
 - name: Build and deploy base package for NETBOX Ubuntu Server
   hosts: netbox
